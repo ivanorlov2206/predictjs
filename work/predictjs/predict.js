@@ -3,6 +3,10 @@ const NAME_LEN = 15;
 
 var models = {};
 
+var utils;
+var findContours;
+var arrayToPtr, ptrToArray;
+
 function make_random_name() {
   var s = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890";
   var len = s.length;
@@ -24,32 +28,6 @@ function create_canv(w, h) {
   canvases.push(canv);
   document.body.appendChild(canv);
   return canv;
-}
-
-function find_contours(canv) {
-  var ctx = canv.getContext('2d');
-  var w = canv.width;
-  var h = canv.height;
-
-  var mnx = w, mny = h, mxx = 0, mxy = 0;
-
-  for (var y = 0; y < h; y++) {
-    for (var x = 0; x < w; x++) {
-      var data = ctx.getImageData(x, y, 1, 1).data[0];
-      if (data > 0) {
-        if (x < mnx)
-          mnx = x;
-        if (x > mxx)
-          mxx = x;
-        if (y < mny)
-          mny = y;
-        if (y > mxy)
-          mxy = y;
-      }
-    }
-  }
-
-  return [mnx, mny, mxx, mxy];
 }
 
 function crop_and_center_image(canv, sz) {
@@ -106,7 +84,6 @@ async function predict(canv, model_name, models_addr) {
   let mx = model.predict(tf_arr);
   console.log(mx)
   var res = Array.from(mx.dataSync())[0];
-
   return res;
 }
 
@@ -130,7 +107,11 @@ function image_to_array(canv, sz) {
 
 
 function process_image(canv, size) {
-  let contours = find_contours(canv);
+  var ctx = canv.getContext('2d');
+  var data = new Int32Array(ctx.getImageData(0, 0, canv.width, canv.height).data);
+  console.log(canv.width + " " + canv.height);
+  let contours = ptrToArray(findContours(arrayToPtr(data), canv.width, canv.height), 4);
+  console.log(contours);
   var cropped = create_canv(contours[2] - contours[0], contours[3] - contours[1]);
   var left = contours[0], top = contours[1], w = contours[2] - contours[0], h = contours[3] - contours[1];
   cropped.getContext('2d').drawImage(canv, left, top, w + left, h + top, 0, 0, w + left, h + top);
@@ -147,6 +128,36 @@ function clear_canvases() {
 
 
 function createPredictor(div, width, height) {
+
+  function loadUtils() {
+    var oReq = new XMLHttpRequest();
+    oReq.responseType = "arraybuffer";
+    oReq.addEventListener("load", function() {
+      var arrayBuffer = oReq.response;
+      Utils['wasmBinary'] = arrayBuffer;
+      (async () => {
+        utils = await Utils({ wasmBinary: Utils.wasmBinary });
+        var nByte = 4;
+        findContours = utils.cwrap('findContours', null, ['number', 'number', 'number'])
+        arrayToPtr = function(arr) {
+          var ptr = utils._malloc(arr.length * nByte);
+          utils.HEAP32.set(arr, ptr / nByte);
+          return ptr;
+        };
+        ptrToArray = function(ptr, length) {
+          var array = new Int32Array(length);
+          var pos = ptr / nByte;
+          array.set(utils.HEAP32.subarray(pos, pos + length));
+          return array;
+        };
+
+      })();
+    });
+    oReq.open("GET", "wasm_utils.wasm");
+    oReq.send();
+  }
+  loadUtils();
+
   let canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
