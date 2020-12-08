@@ -169,6 +169,8 @@ function createPredictor(div, width, height) {
   var h = canvas.height;
   context.fillStyle = "black";
   context.fillRect(0, 0, w, h);
+  context.lineCap = "round";
+  context.lineWidth = 10;
 
   var mouse = {x: 0, y: 0};
   var draw = false;
@@ -184,9 +186,12 @@ function createPredictor(div, width, height) {
           mouse.y = e.pageY - this.offsetTop;
 
           context.fillStyle = "white";
+          context.strokeStyle = "#FFFFFF";
           context.beginPath();
-          context.ellipse(mouse.x, mouse.y, 6, 6, 0, 0, 2 * Math.PI);
-          context.fill();
+          context.moveTo(mouse.x, mouse.y);
+          context.lineTo(mouse.x - e.movementX, mouse.y - e.movementY);
+          context.stroke();
+          context.closePath();
       }
   });
   canvas.addEventListener("pointerup", function(e) {
