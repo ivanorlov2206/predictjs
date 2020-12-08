@@ -121,13 +121,13 @@ function process_image(canv, size) {
 
 function clear_canvases() {
   for (var i = 0; i < canvases.length; i++) {
-    document.body.removeChild(canvases[i]);
+    canvases[i].remove();
   }
   canvases = [];
 }
 
 
-function createPredictor(div, width, height) {
+function createPredictor(div, width, height, pensize) {
 
   function loadUtils() {
     var oReq = new XMLHttpRequest();
@@ -170,7 +170,7 @@ function createPredictor(div, width, height) {
   context.fillStyle = "black";
   context.fillRect(0, 0, w, h);
   context.lineCap = "round";
-  context.lineWidth = 10;
+  context.lineWidth = pensize;
 
   var mouse = {x: 0, y: 0};
   var draw = false;
@@ -200,7 +200,6 @@ function createPredictor(div, width, height) {
       draw = false;
   });
 
-  canvases.push(canvas);
   div.appendChild(canvas);
   var obj = {};
   obj.main_canv = canvas;
@@ -210,6 +209,7 @@ function createPredictor(div, width, height) {
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, w, h);
   }
+  obj.clear_canvases = clear_canvases;
   obj.predict = function(model_name, models_addr) {
     return predict(this.main_canv, model_name, models_addr);
   };
