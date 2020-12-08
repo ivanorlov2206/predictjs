@@ -8,7 +8,7 @@ Include library with
 <script>
 (async () => {
 
-  var predictor = createPredictor(document.getElementById("@div where canvas will be@"), @canvas width@, @canvas height@);
+  var predictor = createPredictor(document.getElementById("@div where canvas will be@"), @canvas width@, @canvas height@, @pen_size(10 is recommended)@);
 
   var res = await predictor.predict('@object_class@', '@models url@');
 })();
@@ -20,7 +20,7 @@ Include library with
 ```javascript
 (async () => {
 
-  var predictor = createPredictor(document.getElementById("test_div"), 224, 224);
+  var predictor = createPredictor(document.getElementById("test_div"), 224, 224, 10);
 
   var res = await predictor.predict('spider', 'http://localhost:8000/models/');
   // in res we can find 1 if drawn object belong to selected class or 0 if it isn't
