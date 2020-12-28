@@ -112,9 +112,21 @@ function process_image(canv, size) {
   console.log(canv.width + " " + canv.height);
   let contours = ptrToArray(findContours(arrayToPtr(data), canv.width, canv.height), 4);
   console.log(contours);
-  var cropped = create_canv(contours[2] - contours[0], contours[3] - contours[1]);
+  var border_h = 0;
+  var border_v = 0;
+  var nw = contours[2] - contours[0];
+  var nh = contours[3] - contours[1];
+  if (nw < 128)
+    border_h = 128 - nw;
+  if (nh < 128)
+    border_v = 128 - nh;
+  var cropped = create_canv(contours[2] - contours[0] + border_h, contours[3] - contours[1] + border_v);
+  cropped.getContext('2d').fillStyle = "black";
+  cropped.getContext('2d').fillRect(0, 0, cropped.width, cropped.height);
+
+
   var left = contours[0], top = contours[1], w = contours[2] - contours[0], h = contours[3] - contours[1];
-  cropped.getContext('2d').drawImage(canv, left, top, w + left, h + top, 0, 0, w + left, h + top);
+  cropped.getContext('2d').drawImage(canv, left - border_h / 2, top - border_v / 2, w + left + border_h / 2, h + top + border_v / 2, 0, 0, w + left + border_h / 2, h + top + border_v / 2);
   var centered = crop_and_center_image(cropped, size);
   return image_to_array(centered, size);
 }
